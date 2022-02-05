@@ -1,0 +1,40 @@
+NAME
+compact_gen - generate a compact digest list
+
+
+SYNOPSIS
+compact_gen [options]
+
+
+DESCRIPTION
+compact_gen can be used to generate a compact digest list.
+
+
+OPTIONS
+-d <output directory>: directory digest lists are written to
+
+-i <path>: file/directory the digest list is generated from
+
+-t <type>: type of compact list to generate (parser, file, metadata)
+
+-a <algo>: digest algorithm
+
+-f: force the digest list to be immutable
+
+-h: display help
+
+
+EXAMPLES
+Generate a digest list for the kernel modules (for custom kernels):
+
+# compact_gen -d /etc/digest_lists -i /lib/modules/`uname -r`
+
+
+AUTHOR
+Written by Roberto Sassu, <roberto.sassu at huawei.com>.
+
+
+COPYING
+Copyright (C) 2017-2022 Huawei Technologies Duesseldorf GmbH. Free use of
+this software is granted under the terms of the GNU Public License 2.0
+(GPLv2).

@@ -1,0 +1,40 @@
+NAME
+diglim_setup.sh - install or uninstall DIGLIM eBPF configuration
+
+
+SYNOPSIS
+diglim_setup.sh install|uninstall [--default]
+
+
+DESCRIPTION
+diglim_setup.sh can be used to automatically (interactively or
+non-interactively) setup DIGLIM eBPF.
+
+
+COMMANDS
+install: install DIGLIM eBPF configuration
+
+uninstall: uninstall DIGLIM eBPF configuration
+
+
+OPTIONS
+--default: take default answer for all questions (non-interactive mode)
+
+
+EXAMPLES
+Install the DIGLIM eBPF configuration.
+
+# diglim_setup.sh install
+
+Unnstall the DIGLIM eBPF configuration.
+
+# diglim_setup.sh uninstall
+
+
+AUTHOR
+Written by Roberto Sassu, <roberto.sassu at huawei.com>.
+
+
+COPYING
+Copyright (C) 2022 Huawei Technologies Duesseldorf GmbH. Free use of this
+software is granted under the terms of the GNU Public License 2.0 (GPLv2).

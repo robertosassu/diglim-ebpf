@@ -1,0 +1,17 @@
+[Unit]
+Description=DIGLIM eBPF user space server
+After=network.target
+DefaultDependencies=no
+Conflicts=shutdown.target
+ConditionPathExists=/sys/fs/bpf/diglim
+
+[Service]
+Type=simple
+ExecStart=diglim_user
+ExecStop=rm -Rf /sys/fs/bpf/diglim
+StandardOutput=append:/var/log/diglim_user.log
+StandardError=inherit
+LimitCORE=infinity
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,37 @@
+NAME
+rpm_gen - generate an digest list
+
+
+SYNOPSIS
+rpm_gen [options]
+
+
+DESCRIPTION
+rpm_gen can be used to generate an rpm digest list, which contains the RPM
+header and an appended signature in PGP format.
+
+
+OPTIONS
+-d <output directory>: directory digest lists are written to
+
+-r <RPM path>: RPM package the digest list is generated from (all RPM packages in DB if not specified)
+
+-p <package>: selected RPM package in RPM DB
+
+-h: display help
+
+
+EXAMPLES
+Generate the digest lists for all packages from the RPM database:
+
+# rpm_gen -d /etc/digest_lists
+
+
+AUTHOR
+Written by Roberto Sassu, <roberto.sassu at huawei.com>.
+
+
+COPYING
+Copyright (C) 2017-2022 Huawei Technologies Duesseldorf GmbH. Free use of
+this software is granted under the terms of the GNU Public License 2.0
+(GPLv2).
