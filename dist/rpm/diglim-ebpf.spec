@@ -3,7 +3,7 @@ Version:        0.1.0
 Release:        1
 Summary:        DIGLIM eBPF
 
-Source0:        https://github.com/robertosassu/%{name}/archive/refs/tags/%{name}-%{version}.tar.gz
+Source0:        https://github.com/robertosassu/%{name}/archive/refs/tags/v%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 License:        GPLv2
 Url:            https://github.com/robertosassu/diglim-ebpf
