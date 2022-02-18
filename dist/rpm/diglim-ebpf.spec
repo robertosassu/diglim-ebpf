@@ -7,15 +7,15 @@ Source0:        https://github.com/robertosassu/%{name}/archive/refs/tags/v%{ver
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 License:        GPLv2
 Url:            https://github.com/robertosassu/diglim-ebpf
-BuildRequires:  autoconf automake libtool elfutils-libelf-devel libbpf-devel
+BuildRequires:  autoconf automake libtool libbpf-devel
 BuildRequires:  bpftool dwarves clang kernel-devel rpm-devel glibc-devel
-BuildRequires:  glibc-devel(x86-32) dracut
-
 %if 0%{?suse_version}
-BuildRequires:  libopenssl-devel
+BuildRequires:  libopenssl-devel glibc-devel-32bit libelf-devel
 %else
-BuildRequires:  openssl-devel
+BuildRequires:  openssl-devel glibc-devel(x86-32) elfutils-libelf-devel
 %endif
+
+BuildRequires:  dracut
 
 %description
 This package contains the DIGLIM eBPF (user space and kernel space) and the
@@ -54,6 +54,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/rpm-plugins/diglim.so
 %exclude %{_libdir}/rpm-plugins/*.la
 %exclude %{_libdir}/rpm-plugins/*.a
+%dir %{_libdir}/diglim-parsers
 %{_libdir}/diglim-parsers/*.so
 %exclude %{_libdir}/diglim-parsers/*.la
 %exclude %{_libdir}/diglim-parsers/*.a
