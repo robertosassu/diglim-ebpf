@@ -9,7 +9,7 @@ License:        GPLv2
 Url:            https://github.com/robertosassu/diglim-ebpf
 BuildRequires:  autoconf automake libtool elfutils-libelf-devel libbpf-devel
 BuildRequires:  bpftool dwarves clang kernel-devel rpm-devel glibc-devel
-BuildRequires:  glibc-devel(x86-32)
+BuildRequires:  glibc-devel(x86-32) dracut
 
 %if 0%{?suse_version}
 BuildRequires:  libopenssl-devel
@@ -46,7 +46,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %dir %{_sysconfdir}/dracut.conf.d
 %{_sysconfdir}/dracut.conf.d/diglim.conf
-%{_unitdir}/diglim_user.service
+%{_prefix}/lib/systemd/system/diglim_user.service
 %{_libdir}/libdiglim.so
 %{_libdir}/libdiglimrpm.so
 %exclude %{_libdir}/*.la
