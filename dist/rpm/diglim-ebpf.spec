@@ -16,6 +16,7 @@ BuildRequires:  openssl-devel glibc-devel(x86-32) elfutils-libelf-devel
 %endif
 
 BuildRequires:  dracut
+Requires:       grubby
 
 %description
 This package contains the DIGLIM eBPF (user space and kernel space) and the
