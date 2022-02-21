@@ -36,6 +36,7 @@
 
 /* From include/uapi/asm-generic/fcntl.h. */
 #define __O_TMPFILE	020000000
+#define O_EXCL		00000200
 
 char _license[] SEC("license") = "GPL";
 int lsm_mode;
@@ -127,6 +128,19 @@ static int digest_lookup(struct file *file)
 	return 0;
 }
 
+static bool mmap_exec_allowed(struct file *file)
+{
+	struct inode_storage *inode_storage;
+
+	inode_storage = bpf_inode_storage_get(&inode_storage_map, file->f_inode,
+					      0, 0);
+	if (inode_storage &&
+	    (inode_storage->state & INODE_STATE_MMAP_EXEC_ALLOWED))
+		return true;
+
+	return false;
+}
+
 SEC("lsm.s/bprm_creds_for_exec")
 int BPF_PROG(exec, struct linux_binprm *bprm)
 {
@@ -138,6 +152,9 @@ int BPF_PROG(mmap_file, struct file *file, unsigned long reqprot,
 	     unsigned long prot, unsigned long flags)
 {
 	if (!file || !(prot & PROT_EXEC))
+		return 0;
+
+	if (mmap_exec_allowed(file))
 		return 0;
 
 	/* From mmap_violation_check() in ima_main.c. */
@@ -164,21 +181,27 @@ SEC("lsm.s/file_open")
 int BPF_PROG(file_open, struct file *file)
 {
 	struct inode_storage *inode_storage;
+	u64 storage_flags = 0;
 
 	if (!(file->f_mode & FMODE_WRITE))
 		return 0;
 
+	if ((file->f_flags & __O_TMPFILE) && (file->f_flags & O_EXCL))
+		storage_flags = BPF_LOCAL_STORAGE_GET_F_CREATE;
+
 	inode_storage = bpf_inode_storage_get(&inode_storage_map, file->f_inode,
-					0, BPF_LOCAL_STORAGE_GET_F_CREATE);
+					0, storage_flags);
 	if (!inode_storage)
 		return 0;
 
-#ifndef HAVE_KERNEL_PATCHES
+	/*
+	 * Temp file not reachable by any other process than the one that
+	 * created it.
+	 */
 	if (file->f_flags & __O_TMPFILE) {
-		inode_storage->state |= INODE_STATE_CHECKED;
+		inode_storage->state |= INODE_STATE_MMAP_EXEC_ALLOWED;
 		return 0;
 	}
-#endif
 
 	inode_storage->state &= ~INODE_STATE_CHECKED;
 	return 0;

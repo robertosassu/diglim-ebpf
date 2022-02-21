@@ -11,6 +11,7 @@
 
 /* Inode state flags. */
 #define INODE_STATE_CHECKED		0x01
+#define INODE_STATE_MMAP_EXEC_ALLOWED	0x02
 
 /* Inode attrib flags. */
 #define INODE_ATTRIB_IMMUTABLE		0x01

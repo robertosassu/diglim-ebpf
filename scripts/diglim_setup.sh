@@ -47,10 +47,6 @@ function install()
 	question "Generate digest lists?" "y"
 	if [ $answer = "y" ]; then
 		rpm_gen -d /etc/digest_lists
-		zero_page_file=$(mktemp)
-		dd if=/dev/zero of=$zero_page_file bs=4096 count=1 &> /dev/null
-		compact_gen -d /etc/digest_lists -i $zero_page_file
-		rm $zero_page_file
 	fi
 
 	question "Generate digest list for built kernel modules?" "n"
