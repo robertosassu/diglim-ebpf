@@ -40,6 +40,11 @@
 char _license[] SEC("license") = "GPL";
 int lsm_mode;
 
+struct inode_storage {
+	u8 state;
+	u8 attribs;
+};
+
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
 	__uint(max_entries, MAX_DIGESTS);
@@ -51,7 +56,7 @@ struct {
 	__uint(type, BPF_MAP_TYPE_INODE_STORAGE);
 	__uint(map_flags, BPF_F_NO_PREALLOC);
 	__type(key, int);
-	__type(value, u8);
+	__type(value, struct inode_storage);
 } inode_storage_map SEC(".maps");
 
 struct {
@@ -87,12 +92,13 @@ static void log(enum errors error, u8 *digest, struct file *file)
 static int digest_lookup(struct file *file)
 {
 	u8 digest[1 + MAX_DIGEST_SIZE] = { 0 };
-	u8 *inode_flags, *inode_attribs;
+	struct inode_storage *inode_storage;
+	u8 *inode_attribs;
 	int ret;
 
-	inode_flags = bpf_inode_storage_get(&inode_storage_map, file->f_inode,
-					    0, BPF_LOCAL_STORAGE_GET_F_CREATE);
-	if (inode_flags && (*inode_flags & INODE_FLAG_CHECKED))
+	inode_storage = bpf_inode_storage_get(&inode_storage_map, file->f_inode,
+					0, BPF_LOCAL_STORAGE_GET_F_CREATE);
+	if (inode_storage && (inode_storage->state & INODE_STATE_CHECKED))
 		return 0;
 
 #ifndef HAVE_KERNEL_PATCHES
@@ -113,9 +119,9 @@ static int digest_lookup(struct file *file)
 		return (lsm_mode == MODE_ENFORCING) ? -EPERM : 0;
 	}
 
-	if (inode_flags) {
-		*inode_flags |= *inode_attribs;
-		*inode_flags |= INODE_FLAG_CHECKED;
+	if (inode_storage) {
+		inode_storage->attribs |= *inode_attribs;
+		inode_storage->state |= INODE_STATE_CHECKED;
 	}
 
 	return 0;
@@ -157,24 +163,24 @@ int BPF_PROG(file_mprotect, struct vm_area_struct *vma, unsigned long prot)
 SEC("lsm.s/file_open")
 int BPF_PROG(file_open, struct file *file)
 {
-	u8 *inode_flags;
+	struct inode_storage *inode_storage;
 
 	if (!(file->f_mode & FMODE_WRITE))
 		return 0;
 
-	inode_flags = bpf_inode_storage_get(&inode_storage_map, file->f_inode,
-					    0, BPF_LOCAL_STORAGE_GET_F_CREATE);
-	if (!inode_flags)
+	inode_storage = bpf_inode_storage_get(&inode_storage_map, file->f_inode,
+					0, BPF_LOCAL_STORAGE_GET_F_CREATE);
+	if (!inode_storage)
 		return 0;
 
 #ifndef HAVE_KERNEL_PATCHES
 	if (file->f_flags & __O_TMPFILE) {
-		*inode_flags |= INODE_FLAG_CHECKED;
+		inode_storage->state |= INODE_STATE_CHECKED;
 		return 0;
 	}
 #endif
 
-	*inode_flags &= ~INODE_FLAG_CHECKED;
+	inode_storage->state &= ~INODE_STATE_CHECKED;
 	return 0;
 }
 

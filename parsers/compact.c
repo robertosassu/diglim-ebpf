@@ -125,7 +125,7 @@ int compact_parse(int map_fd, unsigned char cmd, char *path,
 
 		digest_len = hash_digest_size[hdr->algo];
 		digest_value = (hdr->modifiers & (1 << COMPACT_MOD_IMMUTABLE)) ?
-			       INODE_FLAG_IMMUTABLE : 0;
+			       INODE_ATTRIB_IMMUTABLE : 0;
 
 		for (i = 0; i < hdr->count && bufp + digest_len <= bufendp;
 		     i++, bufp += digest_len) {

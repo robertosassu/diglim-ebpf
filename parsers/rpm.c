@@ -105,18 +105,18 @@ int rpm_parse(int map_fd, unsigned char cmd, char *path, bool only_immutable)
 			continue;
 
 		if (((mode & 0111) || !(mode & 0222)) && size)
-			digest_value = INODE_FLAG_IMMUTABLE;
+			digest_value = INODE_ATTRIB_IMMUTABLE;
 
-		if (!(digest_value & INODE_FLAG_IMMUTABLE) &&
+		if (!(digest_value & INODE_ATTRIB_IMMUTABLE) &&
 		    ((strstr(dirname, "/lib/modules/") &&
 		      strncmp(filename, "modules.", 8)) ||
 		     strstr(dirname, "/lib/firmware") ||
 		     strstr(dirname, "/usr/libexec/") ||
 		     strstr(dirname, "/usr/lib64/") ||
 		     strstr(dirname, "/lib64/")))
-			digest_value = INODE_FLAG_IMMUTABLE;
+			digest_value = INODE_ATTRIB_IMMUTABLE;
 
-		if (only_immutable && !(digest_value & INODE_FLAG_IMMUTABLE))
+		if (only_immutable && !(digest_value & INODE_ATTRIB_IMMUTABLE))
 			continue;
 
 		rpm_digest = rpmfiFDigest(fi, NULL, NULL);

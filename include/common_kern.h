@@ -8,7 +8,11 @@
  */
 
 #define MAX_DIGEST_SIZE	64
-#define INODE_FLAG_CHECKED	0x01
-#define INODE_FLAG_IMMUTABLE	0x02
+
+/* Inode state flags. */
+#define INODE_STATE_CHECKED		0x01
+
+/* Inode attrib flags. */
+#define INODE_ATTRIB_IMMUTABLE		0x01
 
 enum lsm_modes { MODE_ENFORCING, MODE_PERMISSIVE };
