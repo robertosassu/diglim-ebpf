@@ -132,7 +132,12 @@ int main(int argc, char *argv[])
 			goto out_rpm;
 		}
 
-		diglim_gen_filename(hdr, filename, sizeof(filename));
+		ret = diglim_gen_filename(hdr, filename, sizeof(filename));
+		if (ret < 0) {
+			rpmlog(RPMLOG_NOTICE,
+			       "Could not generate digest list file name\n");
+			goto out_rpm;
+		}
 
 		ret = diglim_gen_rpm_digest_list(hdr, dirfd, filename);
 		headerFree(hdr);

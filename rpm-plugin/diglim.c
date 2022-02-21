@@ -25,10 +25,15 @@ static int process_digest_list(rpmte te, enum digest_list_ops op)
 	struct stat st;
 	int ret, server_ret;
 
-	diglim_gen_filename(rpmteHeader(te),
+	ret = diglim_gen_filename(rpmteHeader(te),
 		rpm_digest_list_path + sizeof(DIGEST_LISTS_DEFAULT_PATH) - 1,
 		sizeof(rpm_digest_list_path) -
 		sizeof(DIGEST_LISTS_DEFAULT_PATH) + 1);
+	if (ret < 0) {
+		rpmlog(RPMLOG_DEBUG,
+		       "Could not generate digest list file name\n");
+		return RPMRC_OK;
+	}
 
 	/* The rpm digest list has been already processed. */
 	if ((op == CMD_ADD && !stat(rpm_digest_list_path, &st)) ||

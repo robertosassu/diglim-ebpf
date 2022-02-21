@@ -21,24 +21,16 @@
 
 #include "common.h"
 
-void diglim_gen_filename(Header rpm, char *filename, int filename_len)
+int diglim_gen_filename(Header rpm, char *filename, int filename_len)
 {
-	rpmtd name = rpmtdNew(), version = rpmtdNew();
-	rpmtd release = rpmtdNew(), arch = rpmtdNew();
+	char *_filename = headerFormat(rpm, "0-file_list-rpm-%{nvra}", NULL);
 
-	headerGet(rpm, RPMTAG_NAME, name, 0);
-	headerGet(rpm, RPMTAG_VERSION, version, 0);
-	headerGet(rpm, RPMTAG_RELEASE, release, 0);
-	headerGet(rpm, RPMTAG_ARCH, arch, 0);
+	if (!_filename)
+		return -ENOMEM;
 
-	snprintf(filename, filename_len, "0-file_list-rpm-%s-%s-%s.%s",
-		 rpmtdGetString(name), rpmtdGetString(version),
-		 rpmtdGetString(release), rpmtdGetString(arch));
-
-	rpmtdFree(name);
-	rpmtdFree(version);
-	rpmtdFree(release);
-	rpmtdFree(arch);
+	strncpy(filename, _filename, filename_len);
+	free(_filename);
+	return 0;
 }
 
 static int write_rpm_header(Header rpm, int dirfd, char *filename)

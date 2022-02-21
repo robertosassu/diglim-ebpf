@@ -14,5 +14,5 @@
 #include <rpm/rpmlog.h>
 #include <rpm/rpmtag.h>
 
-void diglim_gen_filename(Header rpm, char *filename, int filename_len);
+int diglim_gen_filename(Header rpm, char *filename, int filename_len);
 int diglim_gen_rpm_digest_list(Header rpm, int dirfd, char *filename);
