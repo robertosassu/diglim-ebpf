@@ -1,5 +1,5 @@
 name:           diglim-ebpf
-Version:        0.1.0
+Version:        0.1.1
 Release:        1
 Summary:        DIGLIM eBPF
 
@@ -81,5 +81,8 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Feb 22 2022 Roberto Sassu <roberto.sassu@huawei.com> - 0.1.1
+- Bug fixes
+
 * Thu Feb 17 2022 Roberto Sassu <roberto.sassu@huawei.com> - 0.1.0
 - First public release
