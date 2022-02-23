@@ -16,7 +16,7 @@ BuildRequires:  openssl-devel glibc-devel(x86-32) elfutils-libelf-devel
 %endif
 
 BuildRequires:  dracut
-Requires:       grubby
+Requires:       grubby dracut
 
 %description
 This package contains the DIGLIM eBPF (user space and kernel space) and the
@@ -39,6 +39,11 @@ ldconfig
 
 %postun
 ldconfig
+
+%posttrans
+if [ -f %{_sysconfdir}/dracut.conf.d/diglim_add_module.conf ]; then
+	dracut -f
+fi
 
 %clean
 rm -rf $RPM_BUILD_ROOT
