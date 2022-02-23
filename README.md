@@ -135,11 +135,19 @@ Examples:
 # compact_gen -d /etc/digest_lists -i /lib/modules/`uname -r`
 ```
 
-3. Generate a digest list for a 4K page of zeros (mmapped as exec by
-firewalld):
+### Digest Lists Uploading at Run-time
+
+Currently, DIGLIM eBPF allows unrestricted uploading of new digest lists.
+The tool ``diglim_user_client`` can be used for this purpose. For example,
+assuming that a digest list is generated for the script ``script.sh``:
+
 ```
-# dd if=/dev/zero of=/tmp/zero_page bs=4096 count=1
-# compact_gen -d /etc/digest_lists -i /tmp/zero_page
+# compact_gen -d /etc/digest_lists -i script.sh
+```
+
+It is possible to upload them to the eBPF program with the command:
+```
+# diglim_user_client -o add -p /etc/digest_lists/0-file_list-compact-script.sh
 ```
 
 
