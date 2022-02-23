@@ -38,6 +38,12 @@
 #define __O_TMPFILE	020000000
 #define O_EXCL		00000200
 
+/* From include/linux/fs.h. */
+#define SB_KERNMOUNT	(1<<22) /* this is a kern_mount call */
+
+/* From include/uapi/linux/magic.h. */
+#define TMPFS_MAGIC	0x01021994
+
 char _license[] SEC("license") = "GPL";
 int lsm_mode;
 
@@ -70,7 +76,6 @@ static void log(enum errors error, u8 *digest, struct file *file)
 	struct task_struct *task = (struct task_struct *)bpf_get_current_task();
 	struct dentry *file_dentry = BPF_CORE_READ(file, f_path.dentry);
 	struct log_entry *e;
-	int i;
 
 	e = bpf_ringbuf_reserve(&ringbuf, sizeof(*e), 0);
 	if (!e)
@@ -131,14 +136,26 @@ static int digest_lookup(struct file *file)
 static bool mmap_exec_allowed(struct file *file)
 {
 	struct inode_storage *inode_storage;
+	u64 storage_flags = 0;
+
+	if ((file->f_inode->i_sb->s_magic == TMPFS_MAGIC) &&
+	     (file->f_inode->i_sb->s_flags & SB_KERNMOUNT))
+		storage_flags = BPF_LOCAL_STORAGE_GET_F_CREATE;
 
 	inode_storage = bpf_inode_storage_get(&inode_storage_map, file->f_inode,
-					      0, 0);
-	if (inode_storage &&
-	    (inode_storage->state & INODE_STATE_MMAP_EXEC_ALLOWED))
-		return true;
+					      0, storage_flags);
+	if (!inode_storage)
+		return false;
 
-	return false;
+	if (storage_flags &
+	    !(inode_storage->state & INODE_STATE_OPENED_WRITTEN))
+		inode_storage->state |= INODE_STATE_MMAP_EXEC_ALLOWED;
+
+	if (!(inode_storage->state & INODE_STATE_MMAP_EXEC_ALLOWED))
+		return false;
+
+	inode_storage->state |= INODE_STATE_MMAP_EXEC_DONE;
+	return true;
 }
 
 SEC("lsm.s/bprm_creds_for_exec")
@@ -173,7 +190,10 @@ int BPF_PROG(file_mprotect, struct vm_area_struct *vma, unsigned long prot)
 	if (!vma->vm_file || !(prot & PROT_EXEC) || (vma->vm_flags & VM_EXEC))
 		return 0;
 
-	log(MPROTECT_ERR, NULL, vma->vm_file ?: NULL);
+	if (mmap_exec_allowed(vma->vm_file))
+		return 0;
+
+	log(MPROTECT_ERR, NULL, vma->vm_file);
 	return (lsm_mode == MODE_ENFORCING) ? -EPERM : 0;
 }
 
@@ -186,24 +206,30 @@ int BPF_PROG(file_open, struct file *file)
 	if (!(file->f_mode & FMODE_WRITE))
 		return 0;
 
-	if ((file->f_flags & __O_TMPFILE) && (file->f_flags & O_EXCL))
+	if ((file->f_flags & __O_TMPFILE) ||
+	    ((file->f_inode->i_sb->s_magic == TMPFS_MAGIC) &&
+	     (file->f_inode->i_sb->s_flags & SB_KERNMOUNT)))
 		storage_flags = BPF_LOCAL_STORAGE_GET_F_CREATE;
 
 	inode_storage = bpf_inode_storage_get(&inode_storage_map, file->f_inode,
-					0, storage_flags);
+					      0, storage_flags);
 	if (!inode_storage)
 		return 0;
 
-	/*
-	 * Temp file not reachable by any other process than the one that
-	 * created it.
-	 */
-	if (file->f_flags & __O_TMPFILE) {
-		inode_storage->state |= INODE_STATE_MMAP_EXEC_ALLOWED;
-		return 0;
+	if (inode_storage->state & INODE_STATE_MMAP_EXEC_DONE) {
+		log(WRITE_MMAPPED_EXEC, NULL, file);
+		return (lsm_mode == MODE_ENFORCING) ? -EPERM : 0;
+	}
+
+	if (inode_storage->state & INODE_STATE_OPENED_WRITTEN) {
+		inode_storage->state &= ~INODE_STATE_MMAP_EXEC_ALLOWED;
+	} else {
+		if (file->f_flags & __O_TMPFILE)
+			inode_storage->state |= INODE_STATE_MMAP_EXEC_ALLOWED;
 	}
 
 	inode_storage->state &= ~INODE_STATE_CHECKED;
+	inode_storage->state |= INODE_STATE_OPENED_WRITTEN;
 	return 0;
 }
 

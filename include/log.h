@@ -11,12 +11,13 @@
 #define CALC_DIGEST_ERR_STR "cannot calculate the digest"
 #define MMAP_WRITERS_ERR_STR "mmap() with writers"
 #define MPROTECT_ERR_STR "mprotect() with exec perm"
+#define WRITE_MMAPPED_EXEC_STR "attempt to write a file mmapped for execution"
 
 #define MAX_DIGEST_SIZE	64
 #define TASK_COMM_LEN 16
 
 enum errors { UNKNOWN_DIGEST_ERR, CALC_DIGEST_ERR, MMAP_WRITERS_ERR,
-	      MPROTECT_ERR, LAST__ERR };
+	      MPROTECT_ERR, WRITE_MMAPPED_EXEC, LAST__ERR };
 
 struct log_entry {
 	enum errors error;

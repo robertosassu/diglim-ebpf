@@ -12,8 +12,8 @@ DIGLIM_CFLAGS=-DHAVE_KERNEL_PATCHES
 endif
 
 diglim_kern.o: vmlinux.h diglim_kern.c
-	clang -g -O2 -I$(top_srcdir)/include -target bpf -c diglim_kern.c \
-	      -mcpu=probe $(DIGLIM_CFLAGS) -o diglim_kern.o
+	clang -g -Wall -Werror -O2 -I$(top_srcdir)/include -target bpf \
+	      -c diglim_kern.c -mcpu=probe $(DIGLIM_CFLAGS) -o diglim_kern.o
 
 diglim_kern.skel.h: diglim_kern.o
 	/usr/sbin/bpftool gen skeleton diglim_kern.o > diglim_kern.skel.h

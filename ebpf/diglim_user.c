@@ -33,6 +33,7 @@ static char *errors_str[LAST__ERR] = {
 	[CALC_DIGEST_ERR] = CALC_DIGEST_ERR_STR,
 	[MMAP_WRITERS_ERR] = MMAP_WRITERS_ERR_STR,
 	[MPROTECT_ERR] = MPROTECT_ERR_STR,
+	[WRITE_MMAPPED_EXEC] = WRITE_MMAPPED_EXEC_STR,
 };
 
 static int process_log(void *ctx, void *data, size_t len)
