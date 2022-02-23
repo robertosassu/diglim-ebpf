@@ -1,5 +1,5 @@
-name:           diglim-ebpf
-Version:        0.1.1
+Name:           diglim-ebpf
+Version:        0.1.2
 Release:        1
 Summary:        DIGLIM eBPF
 
@@ -86,6 +86,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Wed Feb 23 2022 Roberto Sassu <roberto.sassu@huawei.com> - 0.1.2
+- Improve handling of mmap for execution
+- Small improvements
+
 * Tue Feb 22 2022 Roberto Sassu <roberto.sassu@huawei.com> - 0.1.1
 - Bug fixes
 

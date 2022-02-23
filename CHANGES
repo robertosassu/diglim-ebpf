@@ -1,3 +1,8 @@
+2022-02-23  Roberto Sassu <roberto.sassu@huawei.com>
+	version 0.1.2
+	* improve handling of mmap for execution
+	* small improvements
+
 2022-02-22  Roberto Sassu <roberto.sassu@huawei.com>
 	version 0.1.1
 	* bug fixes
