@@ -28,10 +28,20 @@ ltmain.sh
 *.dirstamp
 .vscode/*
 test-driver
+*.cmd
 
-ebpf/diglim_kern.skel.h
-ebpf/diglim_user
-ebpf/diglim_user_client
-ebpf/vmlinux.h
+ebpf/kernel/diglim_kern.lskel.h
+ebpf/kernel/diglim_kern.skel.h
+ebpf/kernel/vmlinux.h
+ebpf/user/diglim_user
+ebpf/user/diglim_log
+ebpf/user/diglim_user_loader
 
 generators/*_gen
+
+kernel-mod/Module.symvers
+kernel-mod/mod/Module.symvers
+kernel-mod/mod/diglim_kern_preload.ko
+kernel-mod/mod/diglim_kern_preload.mod
+kernel-mod/mod/diglim_kern_preload.mod.c
+kernel-mod/mod/modules.order

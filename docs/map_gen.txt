@@ -1,0 +1,36 @@
+NAME
+map_gen - generate a map digest list
+
+
+SYNOPSIS
+map_gen [options]
+
+
+DESCRIPTION
+map_gen can be used to generate a map digest list, which contains the raw
+value to be added to an eBPF map (1 byte digest algo, 64 bytes digest).
+
+
+OPTIONS
+-d <output directory>: directory digest lists are written to
+
+-i <path>: file/directory the digest list is generated from
+
+-a <algo>: digest algorithm
+
+-h: display help
+
+
+EXAMPLES
+Generate the digest list for /usr/bin/diglim_user_loader:
+
+# map_gen -d /etc/digest_lists -i /usr/bin/diglim_user_loader
+
+
+AUTHOR
+Written by Roberto Sassu, <roberto.sassu at huawei.com>.
+
+
+COPYING
+Copyright (C) 2022 Huawei Technologies Duesseldorf GmbH. Free use of this
+software is granted under the terms of the GNU Public License 2.0 (GPLv2).

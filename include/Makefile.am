@@ -1,1 +1,1 @@
- noinst_HEADERS = common.h common_kern.h log.h rpm-common.h
+ noinst_HEADERS = common.h common_kern.h libbpf.h rpm-common.h

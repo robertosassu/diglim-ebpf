@@ -4,7 +4,7 @@
  *
  * Author: Roberto Sassu <roberto.sassu@huawei.com>
  *
- * Generate RPM digest lists.
+ * Common functions for generation of digest lists from RPM headers.
  */
 
 #include <stdio.h>
@@ -19,7 +19,7 @@
 #include <rpm/rpmlog.h>
 #include <rpm/rpmtag.h>
 
-#include "common.h"
+#include "common_user.h"
 
 int diglim_gen_filename(Header rpm, char *filename, int filename_len)
 {

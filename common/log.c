@@ -17,7 +17,7 @@
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 
-#include "common.h"
+#include "common_user.h"
 
 bool is_init;
 

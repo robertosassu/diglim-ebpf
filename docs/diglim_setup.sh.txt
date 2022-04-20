@@ -26,7 +26,7 @@ Install the DIGLIM eBPF configuration.
 
 # diglim_setup.sh install
 
-Unnstall the DIGLIM eBPF configuration.
+Uninstall the DIGLIM eBPF configuration.
 
 # diglim_setup.sh uninstall
 

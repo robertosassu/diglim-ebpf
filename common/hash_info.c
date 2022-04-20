@@ -4,10 +4,10 @@
  *
  * Author: Dmitry Kasatkin <d.kasatkin@samsung.com>
  *
- * Define hash-related structures.
+ * Hash-related structures.
  */
 
-#include "common.h"
+#include "common_user.h"
 
 const char *const hash_algo_name[HASH_ALGO__LAST] = {
 	[HASH_ALGO_MD4]		= "md4",

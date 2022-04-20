@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([diglim-ebpf], [0.1.2], [roberto.sassu@huawei.com])
+AC_INIT([diglim-ebpf], [0.1.3], [roberto.sassu@huawei.com])
 AC_CONFIG_HEADERS([config.h])
 
 AM_INIT_AUTOMAKE([-Wall foreign subdir-objects])
@@ -42,14 +42,14 @@ AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 
 # Checks for libraries.
-AC_SEARCH_LIBS([SHA256_Init], [crypto], [],
-	       AC_MSG_ERROR([Unable to find the OpenSSL library]))
-AC_SEARCH_LIBS([headerGet], [rpm], [],
-	       AC_MSG_ERROR([Unable to find the rpm library]))
-AC_SEARCH_LIBS([elf32_checksum], [elf], [],
-	       AC_MSG_ERROR([Unable to find the ELF library]))
-AC_SEARCH_LIBS([bpf_map__pin], [bpf], [],
-	       AC_MSG_ERROR([Unable to find the libbpf library]))
+AC_CHECK_LIB([crypto], [SHA256_Init], [found=true],
+	     AC_MSG_ERROR([Unable to find the OpenSSL library]))
+AC_CHECK_LIB([rpm], [headerGet], [found=true],
+	     AC_MSG_ERROR([Unable to find the rpm library]))
+AC_CHECK_LIB([elf], [elf32_checksum], [found=true],
+	     AC_MSG_ERROR([Unable to find the ELF library]))
+AC_CHECK_LIB([bpf], [bpf_map__pin], [found=true],
+	     AC_MSG_ERROR([Unable to find the libbpf library]))
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h stdlib.h string.h unistd.h], [],
@@ -62,14 +62,6 @@ AC_CHECK_HEADERS([libelf.h], [],
 		 AC_MSG_ERROR([Unable to find the ELF headers]))
 AC_CHECK_HEADERS([bpf/bpf.h], [],
 		 AC_MSG_ERROR([Unable to find the libbpf headers]))
-
-AC_ARG_WITH(kernel-patches,
-	AC_HELP_STRING([--with-kernel-patches],
-	[Use features from non-upstream kernels [default is off]]),
-	[kernel_patches="yes"
-	AC_MSG_RESULT([*** Enabling features from non-upstream kernels ***])],)
-
-AM_CONDITIONAL([HAVE_KERNEL_PATCHES], [test "$kernel_patches" = yes])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_CHECK_HEADER_STDBOOL
@@ -97,14 +89,16 @@ AC_CONFIG_FILES([Makefile
 		 common/Makefile
 		 docs/Makefile
 		 ebpf/Makefile
+		 ebpf/kernel/Makefile
+		 ebpf/user/Makefile
 		 generators/Makefile
 		 include/Makefile
 		 initrd/dracut/Makefile
 		 initrd/Makefile
-		 parsers/Makefile
 		 rpm-plugin/Makefile
 		 scripts/Makefile
-		 systemd/Makefile])
+		 systemd/Makefile
+		 kernel-mod/Makefile])
 AC_OUTPUT
 cat <<EOF
 

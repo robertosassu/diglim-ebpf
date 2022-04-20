@@ -4,10 +4,10 @@ SUBDIRS = common \
 	  include \
 	  initrd \
 	  generators \
-	  parsers \
 	  rpm-plugin \
 	  scripts \
-	  systemd
+	  systemd \
+	  kernel-mod
 
 EXTRA_DIST = AUTHORS \
 	     CHANGES

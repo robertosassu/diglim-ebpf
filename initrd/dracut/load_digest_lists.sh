@@ -18,7 +18,7 @@ ls /etc/digest_lists | sort | uniq > $a
 ls $NEWROOT/etc/digest_lists | sort | uniq > $b
 
 for f in $(diff -up $a $b | awk '$1 ~ /^\+[0-9].*/'); do
-	diglim_user_client -o add -p $NEWROOT/etc/digest_lists/${f#+}
+	diglim_user_loader -o add -p $NEWROOT/etc/digest_lists/${f#+}
 done
 
 rm -f $a $b

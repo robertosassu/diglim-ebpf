@@ -1,0 +1,38 @@
+NAME
+diglim_user - initialize DIGLIM eBPF from user space
+
+
+SYNOPSIS
+diglim_user [options]
+
+
+DESCRIPTION
+diglim_user can be used to initialize DIGLIM eBPF from user space. It first
+reads the digest of the digest list loader, then initializes DIGLIM eBPF,
+and finally executes the digest list loader to push digests to a DIGLIM
+eBPF map.
+
+
+OPTIONS
+-p: set DIGLIM eBPF in permissive mode
+
+-d <path>: path of the digest list or the directory containing the digest lists
+
+-m <map name>: the name of the eBPF map digest lists are written to
+
+-h: display help
+
+
+EXAMPLES
+Initialize DIGLIM eBPF and load the digest lists from /etc/digest_lists:
+
+# diglim_user -d /etc/digest_lists
+
+
+AUTHOR
+Written by Roberto Sassu, <roberto.sassu at huawei.com>.
+
+
+COPYING
+Copyright (C) 2022 Huawei Technologies Duesseldorf GmbH. Free use of this
+software is granted under the terms of the GNU Public License 2.0 (GPLv2).

@@ -4,7 +4,7 @@
  *
  * Author: Roberto Sassu <roberto.sassu@huawei.com>
  *
- * Common RPM functions and definitions.
+ * Common RPM definitions.
  */
 
 #include <rpm/rpmlib.h>

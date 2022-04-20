@@ -4,7 +4,7 @@
  *
  * Author: Roberto Sassu <roberto.sassu@huawei.com>
  *
- * Generate RPM digest lists.
+ * Generator of rpm digest lists.
  */
 
 #include <stdio.h>
@@ -19,7 +19,7 @@
 #include <rpm/rpmlog.h>
 #include <rpm/rpmtag.h>
 
-#include "common.h"
+#include "common_user.h"
 #include "rpm-common.h"
 
 static int find_package(Header rpm, char *package)

@@ -26,10 +26,9 @@ install() {
 
     inst_dir /etc/digest_lists
     inst_multiple /etc/digest_lists/*
-    inst_simple /usr/share/diglim-ebpf/ima-policy
+    inst_binary diglim_user_loader
     inst_binary diglim_user
-    inst_binary diglim_user_client
-    inst_libdir_file "diglim-parsers/*.so"
+    inst_binary diglim_log
     inst_binary sort
     inst_binary uniq
     inst_binary awk

@@ -10,66 +10,49 @@
  * Kylene Hall <kylene@us.ibm.com>
  * Mimi Zohar <zohar@us.ibm.com>
  *
- * Implement the kernel space side of DIGLIM.
+ * DIGLIM eBPF security module.
  */
 
-#include "vmlinux.h"
-#include <errno.h>
 #include <stdarg.h>
 #include <limits.h>
 #include <string.h>
-#include <linux/mman.h>
-#include <bpf/bpf_helpers.h>
-#include <bpf/bpf_tracing.h>
-#include <bpf/bpf_core_read.h>
+#include <asm-generic/mman-common.h>
 
 #include "common_kern.h"
-#include "log.h"
-
-#define MAX_DIGESTS	1000000
-
-/* From include/linux/mm.h. */
-#define VM_EXEC	0x00000004
-
-/* From include/linux/mm.h. */
-#define FMODE_WRITE	0x2
-
-/* From include/uapi/asm-generic/fcntl.h. */
-#define __O_TMPFILE	020000000
-#define O_EXCL		00000200
-
-/* From include/linux/fs.h. */
-#define SB_KERNMOUNT	(1<<22) /* this is a kern_mount call */
-
-/* From include/uapi/linux/magic.h. */
-#define TMPFS_MAGIC	0x01021994
 
 char _license[] SEC("license") = "GPL";
+
 int lsm_mode;
+bool ima_ready = false;
 
-struct inode_storage {
-	u8 state;
-	u8 attribs;
+digest_items_t digest_items SEC(".maps");
+ringbuf_t ringbuf SEC(".maps");
+data_input_t data_input SEC(".maps");
+inode_storage_map_t inode_storage_map SEC(".maps");
+dirnames_map_t dirnames_map SEC(".maps");
+
+const int hash_digest_size[HASH_ALGO__LAST] = {
+	[HASH_ALGO_MD4]		= MD5_DIGEST_SIZE,
+	[HASH_ALGO_MD5]		= MD5_DIGEST_SIZE,
+	[HASH_ALGO_SHA1]	= SHA1_DIGEST_SIZE,
+	[HASH_ALGO_RIPE_MD_160]	= RMD160_DIGEST_SIZE,
+	[HASH_ALGO_SHA256]	= SHA256_DIGEST_SIZE,
+	[HASH_ALGO_SHA384]	= SHA384_DIGEST_SIZE,
+	[HASH_ALGO_SHA512]	= SHA512_DIGEST_SIZE,
+	[HASH_ALGO_SHA224]	= SHA224_DIGEST_SIZE,
+	[HASH_ALGO_RIPE_MD_128]	= RMD128_DIGEST_SIZE,
+	[HASH_ALGO_RIPE_MD_256]	= RMD256_DIGEST_SIZE,
+	[HASH_ALGO_RIPE_MD_320]	= RMD320_DIGEST_SIZE,
+	[HASH_ALGO_WP_256]	= WP256_DIGEST_SIZE,
+	[HASH_ALGO_WP_384]	= WP384_DIGEST_SIZE,
+	[HASH_ALGO_WP_512]	= WP512_DIGEST_SIZE,
+	[HASH_ALGO_TGR_128]	= TGR128_DIGEST_SIZE,
+	[HASH_ALGO_TGR_160]	= TGR160_DIGEST_SIZE,
+	[HASH_ALGO_TGR_192]	= TGR192_DIGEST_SIZE,
+	[HASH_ALGO_SM3_256]	= SM3256_DIGEST_SIZE,
+	[HASH_ALGO_STREEBOG_256] = STREEBOG256_DIGEST_SIZE,
+	[HASH_ALGO_STREEBOG_512] = STREEBOG512_DIGEST_SIZE,
 };
-
-struct {
-	__uint(type, BPF_MAP_TYPE_HASH);
-	__uint(max_entries, MAX_DIGESTS);
-	__uint(key_size, 1 + MAX_DIGEST_SIZE);
-	__uint(value_size, sizeof(u8));
-} digest_items SEC(".maps");
-
-struct {
-	__uint(type, BPF_MAP_TYPE_INODE_STORAGE);
-	__uint(map_flags, BPF_F_NO_PREALLOC);
-	__type(key, int);
-	__type(value, struct inode_storage);
-} inode_storage_map SEC(".maps");
-
-struct {
-	__uint(type, BPF_MAP_TYPE_RINGBUF);
-	__uint(max_entries, 1 << 12);
-} ringbuf SEC(".maps");
 
 static void log(enum errors error, u8 *digest, struct file *file)
 {
@@ -99,19 +82,22 @@ static int digest_lookup(struct file *file)
 {
 	u8 digest[1 + MAX_DIGEST_SIZE] = { 0 };
 	struct inode_storage *inode_storage;
-	u8 *inode_attribs;
+	struct digest_info *info;
 	int ret;
+
+	if (!ima_ready) {
+		log(IMA_NOT_READY_ERR, NULL, file);
+		return (lsm_mode == MODE_ENFORCING) ? -EPERM : 0;
+	}
 
 	inode_storage = bpf_inode_storage_get(&inode_storage_map, file->f_inode,
 					0, BPF_LOCAL_STORAGE_GET_F_CREATE);
 	if (inode_storage && (inode_storage->state & INODE_STATE_CHECKED))
 		return 0;
 
-#ifndef HAVE_KERNEL_PATCHES
-	ret = bpf_ima_inode_hash(file->f_inode, digest + 1, sizeof(digest) - 1);
-#else
+	ret = -EPERM;
+
 	ret = bpf_ima_file_hash(file, digest + 1, sizeof(digest) - 1);
-#endif
 	if (ret < 0) {
 		log(CALC_DIGEST_ERR, NULL, file);
 		return (lsm_mode == MODE_ENFORCING) ? -EPERM : 0;
@@ -119,14 +105,14 @@ static int digest_lookup(struct file *file)
 
 	digest[0] = ret;
 
-	inode_attribs = bpf_map_lookup_elem(&digest_items, digest);
-	if (!inode_attribs) {
+	info = bpf_map_lookup_elem(&digest_items, digest);
+	if (!info) {
 		log(UNKNOWN_DIGEST_ERR, digest, file);
 		return (lsm_mode == MODE_ENFORCING) ? -EPERM : 0;
 	}
 
 	if (inode_storage) {
-		inode_storage->attribs |= *inode_attribs;
+		inode_storage->info = info;
 		inode_storage->state |= INODE_STATE_CHECKED;
 	}
 
@@ -161,6 +147,9 @@ static bool mmap_exec_allowed(struct file *file)
 SEC("lsm.s/bprm_creds_for_exec")
 int BPF_PROG(exec, struct linux_binprm *bprm)
 {
+	if (!bprm->file)
+		return 0;
+
 	return digest_lookup(bprm->file);
 }
 
@@ -217,7 +206,7 @@ int BPF_PROG(file_open, struct file *file)
 		return 0;
 
 	if (inode_storage->state & INODE_STATE_MMAP_EXEC_DONE) {
-		log(WRITE_MMAPPED_EXEC, NULL, file);
+		log(WRITE_MMAPPED_EXEC_ERR, NULL, file);
 		return (lsm_mode == MODE_ENFORCING) ? -EPERM : 0;
 	}
 
@@ -233,7 +222,6 @@ int BPF_PROG(file_open, struct file *file)
 	return 0;
 }
 
-#ifdef HAVE_KERNEL_PATCHES
 SEC("lsm.s/kernel_read_file")
 int BPF_PROG(kernel_read_file, struct file *file, enum kernel_read_file_id id,
 	     bool contents)
@@ -241,6 +229,23 @@ int BPF_PROG(kernel_read_file, struct file *file, enum kernel_read_file_id id,
 	if (!contents)
 		return 0;
 
+	/* Signature is verified. */
+	if (id == READING_DIGLIM_CONF)
+		return 0;
+
 	return digest_lookup(file);
 }
-#endif
+
+SEC("lsm.s/bpf")
+int BPF_PROG(bpf_deny_map_write, int cmd, union bpf_attr *attr,
+	     unsigned int size)
+{
+	if (cmd != BPF_MAP_UPDATE_ELEM && cmd != BPF_MAP_DELETE_ELEM)
+		return 0;
+
+	if (bpf_map_same((struct bpf_map *)&digest_items, attr->map_fd) ||
+	    bpf_map_same((struct bpf_map *)&dirnames_map, attr->map_fd))
+		return -EPERM;
+
+	return 0;
+}

@@ -1,0 +1,27 @@
+NAME
+diglim_log - DIGLIM eBPF logging service
+
+
+SYNOPSIS
+diglim_log
+
+
+DESCRIPTION
+diglim_log takes the logs produced by the eBPF program and forwards them to
+syslog (e.g. systemd journal).
+
+
+EXAMPLES
+Start the DIGLIM eBPF logging service:
+
+# diglim_log
+
+
+AUTHOR
+Written by Roberto Sassu, <roberto.sassu at huawei.com>.
+
+
+COPYING
+Copyright (C) 2022 Huawei Technologies Duesseldorf GmbH. Free use of
+this software is granted under the terms of the GNU Public License 2.0
+(GPLv2).

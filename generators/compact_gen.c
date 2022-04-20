@@ -4,15 +4,13 @@
  *
  * Author: Roberto Sassu <roberto.sassu@huawei.com>
  *
- * Generate compact digest lists.
+ * Generator of compact digest lists.
  */
 
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <limits.h>
-#include <openssl/sha.h>
-#include <openssl/evp.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -20,85 +18,9 @@
 #include <fts.h>
 #include <string.h>
 #include <getopt.h>
+#include <stdlib.h>
 
-#include "common.h"
-
-char *compact_types_str[COMPACT__LAST] = {
-	[COMPACT_PARSER] = "parser",
-	[COMPACT_FILE] = "file",
-	[COMPACT_METADATA] = "metadata",
-	[COMPACT_DIGEST_LIST] = "digest_list",
-};
-
-static int gen_filename_prefix(char *filename, int filename_len, int pos,
-			       const char *format, enum compact_types type)
-{
-	return snprintf(filename, filename_len, "%d-%s_list-%s-",
-			(pos >= 0) ? pos : 0, compact_types_str[type], format);
-}
-
-static int calc_digest(u8 *digest, void *data, u64 len, enum hash_algo algo)
-{
-	EVP_MD_CTX *mdctx;
-	const EVP_MD *md;
-	int ret = -EINVAL;
-
-	OpenSSL_add_all_algorithms();
-
-	md = EVP_get_digestbyname(hash_algo_name[algo]);
-	if (!md)
-		goto out;
-
-	mdctx = EVP_MD_CTX_create();
-	if (!mdctx)
-		goto out;
-
-	if (EVP_DigestInit_ex(mdctx, md, NULL) != 1)
-		goto out_mdctx;
-
-	if (EVP_DigestUpdate(mdctx, data, len) != 1)
-		goto out_mdctx;
-
-	if (EVP_DigestFinal_ex(mdctx, digest, NULL) != 1)
-		goto out_mdctx;
-
-	ret = 0;
-out_mdctx:
-	EVP_MD_CTX_destroy(mdctx);
-out:
-	EVP_cleanup();
-	return ret;
-}
-
-static int calc_file_digest(u8 *digest, char *path, enum hash_algo algo)
-{
-	void *data = MAP_FAILED;
-	struct stat st;
-	int fd, ret = 0;
-
-	if (stat(path, &st) == -1)
-		return -EACCES;
-
-	fd = open(path, O_RDONLY);
-	if (fd < 0)
-		return -EACCES;
-
-	if (st.st_size) {
-		data = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-		if (data == MAP_FAILED) {
-			ret = -ENOMEM;
-			goto out;
-		}
-	}
-
-	ret = calc_digest(digest, data, st.st_size, algo);
-out:
-	if (data != MAP_FAILED)
-		munmap(data, st.st_size);
-
-	close(fd);
-	return ret;
-}
+#include "common_user.h"
 
 static u8 *new_digest_list(enum hash_algo algo, enum compact_types type,
 			   u16 modifiers)
@@ -106,8 +28,9 @@ static u8 *new_digest_list(enum hash_algo algo, enum compact_types type,
 	u8 *digest_list;
 	struct compact_list_hdr *hdr;
 
-	digest_list = mmap(NULL, COMPACT_LIST_SIZE_MAX, PROT_READ | PROT_WRITE,
-			   MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
+	digest_list = mmap(NULL, sizeof(((struct data *)0)->val),
+			   PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
+			   0, 0);
 	if (digest_list == MAP_FAILED) {
 		printf("Cannot allocate buffer\n");
 		return NULL;
@@ -182,7 +105,7 @@ static int gen_compact_digest_list(char *input, enum hash_algo algo,
 
 			cur_hdr = (struct compact_list_hdr *)digest_list_ptr;
 
-			ret = calc_file_digest(digest_list_ptr +
+			ret = diglim_calc_file_digest(digest_list_ptr +
 					sizeof(*cur_hdr) + cur_hdr->datalen,
 					ftsent->fts_path, algo);
 			if (ret < 0) {
@@ -336,9 +259,9 @@ int main(int argc, char *argv[])
 		printf("Unable to write the digest list to %s\n", path);
 out:
 	if (digest_list)
-		munmap(digest_list, COMPACT_LIST_SIZE_MAX);
+		munmap(digest_list, sizeof(((struct data *)0)->val));
 	if (digest_list_immutable)
-		munmap(digest_list_immutable, COMPACT_LIST_SIZE_MAX);
+		munmap(digest_list_immutable, sizeof(((struct data *)0)->val));
 
 	if (fd >= 0)
 		close(fd);

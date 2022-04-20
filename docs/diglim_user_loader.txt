@@ -1,0 +1,37 @@
+NAME
+diglim_user_loader - push digest lists to the DIGLIM eBPF program
+
+
+SYNOPSIS
+diglim_user_loader [options]
+
+
+DESCRIPTION
+diglim_user_loader can be used to push one or multiple digest lists from
+the specified file/directory to the DIGLIM eBPF program. Supported
+operations are addition or deletion of digests in a DIGLIM eBPF map.
+
+
+OPTIONS
+-o <op>: digest list operation
+
+-d <path>: path of the digest list or the directory containing the digest lists
+
+-m <map name>: the name of the eBPF map digest lists are written to
+
+-h: display help
+
+
+EXAMPLES
+Load the digest lists from /etc/digest_lists:
+
+# diglim_user_loader -o add -d /etc/digest_lists
+
+
+AUTHOR
+Written by Roberto Sassu, <roberto.sassu at huawei.com>.
+
+
+COPYING
+Copyright (C) 2022 Huawei Technologies Duesseldorf GmbH. Free use of this
+software is granted under the terms of the GNU Public License 2.0 (GPLv2).

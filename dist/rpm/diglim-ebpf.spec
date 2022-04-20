@@ -1,5 +1,5 @@
 Name:           diglim-ebpf
-Version:        0.1.2
+Version:        0.1.3
 Release:        1
 Summary:        DIGLIM eBPF
 
@@ -52,7 +52,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %dir %{_sysconfdir}/dracut.conf.d
 %{_sysconfdir}/dracut.conf.d/diglim.conf
-%{_prefix}/lib/systemd/system/diglim_user.service
+%{_prefix}/lib/systemd/system/diglim_log.service
 %{_libdir}/libdiglim.so
 %{_libdir}/libdiglimrpm.so
 %exclude %{_libdir}/*.la
@@ -60,32 +60,39 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/rpm-plugins/diglim.so
 %exclude %{_libdir}/rpm-plugins/*.la
 %exclude %{_libdir}/rpm-plugins/*.a
-%dir %{_libdir}/diglim-parsers
-%{_libdir}/diglim-parsers/*.so
-%exclude %{_libdir}/diglim-parsers/*.la
-%exclude %{_libdir}/diglim-parsers/*.a
-%{_bindir}/diglim_user_client
+%{_bindir}/diglim_user_loader
 %{_bindir}/compact_gen
 %{_bindir}/rpm_gen
+%{_bindir}/map_gen
+%{_bindir}/diglim_log
 %{_bindir}/diglim_setup.sh
 %{_sbindir}/diglim_user
 %dir /usr/lib/dracut/modules.d/98diglim
 %{_prefix}/lib/dracut/modules.d/98diglim/module-setup.sh
 %{_prefix}/lib/dracut/modules.d/98diglim/load_digest_lists.sh
-%{_datarootdir}/diglim-ebpf/ima-policy
 
 %doc
 %dir %{_datarootdir}/diglim-ebpf
 %{_datarootdir}/diglim-ebpf/README.md
 %{_datarootdir}/diglim-ebpf/compact_gen.txt
 %{_datarootdir}/diglim-ebpf/rpm_gen.txt
+%{_datarootdir}/diglim-ebpf/map_gen.txt
 %{_datarootdir}/diglim-ebpf/diglim_setup.sh.txt
+%{_datarootdir}/diglim-ebpf/diglim_log.txt
+%{_datarootdir}/diglim-ebpf/diglim_user_loader.txt
+%{_datarootdir}/diglim-ebpf/diglim_user.txt
 %{_mandir}/man1/compact_gen.1.gz
 %{_mandir}/man1/rpm_gen.1.gz
+%{_mandir}/man1/map_gen.1.gz
 %{_mandir}/man1/diglim_setup.sh.1.gz
-
+%{_mandir}/man1/diglim_log.1.gz
+%{_mandir}/man1/diglim_user_loader.1.gz
+%{_mandir}/man1/diglim_user.1.gz
 
 %changelog
+* Wed Apr 20 2022 Roberto Sassu <roberto.sassu@huawei.com> - 0.1.3
+- Rewrite digest list parsers as eBPF programs
+
 * Wed Feb 23 2022 Roberto Sassu <roberto.sassu@huawei.com> - 0.1.2
 - Improve handling of mmap for execution
 - Small improvements

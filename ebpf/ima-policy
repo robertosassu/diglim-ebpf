@@ -1,2 +1,0 @@
-audit func=FILE_CHECK mask=^MAY_READ
-audit func=FILE_CHECK mask=MAY_EXEC

@@ -4,89 +4,22 @@
  *
  * Author: Roberto Sassu <roberto.sassu@huawei.com>
  *
- * Common functions and definitions.
+ * Common definitions.
  */
 
-#include <stddef.h>
-#include <stdbool.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdint.h>
-#include <bpf/bpf.h>
-#include <bpf/libbpf.h>
-#ifdef __BIG_ENDIAN__
-#include <linux/byteorder/big_endian.h>
-#else
-#include <linux/byteorder/little_endian.h>
-#endif
-#include <asm/bitsperlong.h>
-#include <linux/hash_info.h>
-
-#include "common_kern.h"
-
+#ifndef __VMLINUX_H__
+#include <limits.h>
+#include <linux/types.h>
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
-#ifndef bool
-typedef int bool;
 #endif
 
-#define be32_to_cpu __be32_to_cpu
-#define be16_to_cpu __be16_to_cpu
-#define cpu_to_be32 __cpu_to_be32
-#define cpu_to_be16 __cpu_to_be16
-#define le16_to_cpu __le16_to_cpu
-#define le32_to_cpu __le32_to_cpu
-#define le64_to_cpu __le64_to_cpu
-#define cpu_to_le16 __cpu_to_le16
-#define cpu_to_le32 __cpu_to_le32
-#define cpu_to_le64 __cpu_to_le64
-
-#define DIGEST_LISTS_DEFAULT_PATH "/etc/digest_lists/"
-#define PARSER_DIR LIBDIR "/diglim-parsers/"
-
-#define SYSFS_PATH "/sys/"
-#define BPFFS_PATH SYSFS_PATH "fs/bpf/"
-#define SECURITYFS_PATH SYSFS_PATH "kernel/security/"
-#define DIGLIM_BPFFS_PATH BPFFS_PATH "diglim/"
-#define DEBUGFS_PATH SYSFS_PATH "kernel/debug/"
-#define DIGEST_ITEMS_MAP_NAME "digest_items"
-#define DIGEST_ITEMS_MAP_PATH (DIGLIM_BPFFS_PATH DIGEST_ITEMS_MAP_NAME)
-#define RINGBUF_NAME "ringbuf"
-#define RINGBUF_PATH (DIGLIM_BPFFS_PATH RINGBUF_NAME)
-#define DIGLIM_IMA_POLICY_PATH "/usr/share/diglim-ebpf/ima-policy"
-#define IMA_POLICY_PATH SECURITYFS_PATH "ima/policy"
-
-/* parsers.c */
-typedef int (*init_parser)(void);
-typedef void (*fini_parser)(void);
-typedef int (*parse_digest_list)(int map_fd, unsigned char cmd,
-				 char *path, bool only_immutable);
-
-struct parser {
-	char name[256];
-	init_parser init_func;
-	fini_parser fini_func;
-	parse_digest_list parse_func;
-	void *handle;
-	struct parser *next;
-};
-
-enum digest_list_ops { CMD_ADD, CMD_DEL, CMD__LAST };
-
-int diglim_init_parsers(void);
-void diglim_fini_parsers(void);
-int diglim_parse_digest_list(int map_fd, unsigned char cmd, char *path,
-			     bool only_immutable);
-
-/* clientserver.c */
-int diglim_main_loop(int map_fd, bool only_immutable,
-		     struct ring_buffer *ringbuf);
-int diglim_exec_op(char *path, enum digest_list_ops op, int *server_ret);
+enum lsm_modes { MODE_ENFORCING, MODE_PERMISSIVE };
 
 /* Compact list definitions */
-#define COMPACT_LIST_SIZE_MAX (64 * 1024 * 1024 - 1)
+#define MAX_NUM_BLOCKS	10
 
 enum compact_types { COMPACT_PARSER, COMPACT_FILE, COMPACT_METADATA,
 		     COMPACT_DIGEST_LIST, COMPACT__LAST };
@@ -103,16 +36,41 @@ struct compact_list_hdr {
 	__le32 datalen;
 } __attribute((packed));
 
-/* hexdump.c */
-int hex2bin(unsigned char *dst, const char *src, size_t count);
-char *bin2hex(char *dst, const void *src, size_t count);
+enum ops { DIGEST_LIST_ADD, DIGEST_LIST_DEL, DIGEST_LIST_OP__LAST };
 
-/* log.c */
-extern bool is_init;
+struct data {
+	u8 op;
+	size_t size;
+	u8 val[2 * 1024 * 1024];
+};
 
-void _log(char *fmt, ...);
+#define UNKNOWN_DIGEST_ERR_STR "unknown digest"
+#define CALC_DIGEST_ERR_STR "cannot calculate the digest"
+#define MMAP_WRITERS_ERR_STR "mmap() with writers"
+#define MPROTECT_ERR_STR "mprotect() with exec perm"
+#define WRITE_MMAPPED_EXEC_STR "attempt to write a file mmapped for execution"
+#define IMA_NOT_READY_STR "IMA not yet ready"
 
-/* hash_info.c */
+#define MAX_DIGEST_SIZE	64
+#define TASK_COMM_LEN 16
+
+#ifndef NAME_MAX
+#define NAME_MAX 255
+#endif
+
+enum errors { UNKNOWN_DIGEST_ERR, CALC_DIGEST_ERR, MMAP_WRITERS_ERR,
+	      MPROTECT_ERR, WRITE_MMAPPED_EXEC_ERR, IMA_NOT_READY_ERR,
+	      LAST__ERR };
+
+struct log_entry {
+	enum errors error;
+	u8 digest[1 + MAX_DIGEST_SIZE];
+	char filename[NAME_MAX + 1];
+	unsigned long magic;
+	char task_name[TASK_COMM_LEN + 1];
+	u32 task_pid;
+};
+
 #define MD5_DIGEST_SIZE 16
 #define SHA1_DIGEST_SIZE 20
 #define RMD160_DIGEST_SIZE 20
@@ -133,36 +91,11 @@ void _log(char *fmt, ...);
 #define STREEBOG256_DIGEST_SIZE 32
 #define STREEBOG512_DIGEST_SIZE 64
 
-extern const char *const hash_algo_name[HASH_ALGO__LAST];
-extern const int hash_digest_size[HASH_ALGO__LAST];
-
-/* module_signature.h (from Linux kernel) */
-
-/* In stripped ARM and x86-64 modules, ~ is surprisingly rare. */
-#define MODULE_SIG_STRING "~Module signature appended~\n"
-
-enum pkey_id_type {
-	PKEY_ID_PGP,		/* OpenPGP generated key ID */
-	PKEY_ID_X509,		/* X.509 arbitrary subjectKeyIdentifier */
-	PKEY_ID_PKCS7,		/* Signature in PKCS#7 message */
-};
-
-/*
- * Module signature information block.
- *
- * The constituents of the signature section are, in order:
- *
- *	- Signer's name
- *	- Key identifier
- *	- Signature data
- *	- Information block
- */
-struct module_signature {
-	u8	algo;		/* Public-key crypto algorithm [0] */
-	u8	hash;		/* Digest algorithm [0] */
-	u8	id_type;	/* Key identifier type [PKEY_ID_PKCS7] */
-	u8	signer_len;	/* Length of signer's name [0] */
-	u8	key_id_len;	/* Length of key identifier [0] */
-	u8	__pad[3];
-	__be32	sig_len;	/* Length of signature data */
-};
+#define SYSFS_PATH "/sys/"
+#define BPFFS_PATH SYSFS_PATH "fs/bpf/"
+#define SECURITYFS_PATH SYSFS_PATH "kernel/security/"
+#define BPFFS_DIGLIM_PATH BPFFS_PATH "diglim/"
+#define DIGEST_LISTS_DEFAULT_PATH "/etc/digest_lists/"
+#define DIGEST_LIST_LOADER_PATH "/usr/bin/diglim_user_loader"
+#define LOADER_DIGEST_LIST_PATH DIGEST_LISTS_DEFAULT_PATH \
+				"/0-file_list-map-diglim_user_loader"

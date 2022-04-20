@@ -1,0 +1,14 @@
+[Unit]
+Description=DIGLIM eBPF logging service
+After=network.target
+DefaultDependencies=no
+Conflicts=shutdown.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/diglim_log
+StandardError=inherit
+LimitCORE=infinity
+
+[Install]
+WantedBy=multi-user.target

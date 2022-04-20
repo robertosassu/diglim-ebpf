@@ -1,5 +1,5 @@
 NAME
-rpm_gen - generate an digest list
+rpm_gen - generate an rpm digest list
 
 
 SYNOPSIS
